@@ -1,0 +1,30 @@
+service: apollo-lambda
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  httpApi:
+    cors: true
+
+package: 
+  exclude:
+    - node_modules/**
+    - .git/**
+    - test/**
+    - README.md
+    - .gitignore
+
+functions:
+  graphql:
+    handler: index.handler
+    events:
+      - httpApi:
+          path: /
+          method: POST
+      - httpApi:
+          path: /
+          method: GET
+
+plugins:
+  - serverless-offline
+  

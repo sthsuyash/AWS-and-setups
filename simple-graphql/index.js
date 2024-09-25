@@ -1,8 +1,6 @@
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
-import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
-// import { startStandaloneServer } from "@apollo/server/standalone";
-import http from "http";
+import serverlessExpress from '@vendia/serverless-express';
 import express from "express";
 import cors from 'cors';
 import dotenv from "dotenv";
@@ -22,10 +20,6 @@ dotenv.config();
 configurePassport();
 
 const app = express();
-// Our httpServer handles incoming requests to our Express app.
-// Below, we tell Apollo Server to "drain" this httpServer,
-// enabling our servers to shut down gracefully.
-const httpServer = http.createServer(app);
 
 // Create a new MongoDBStore instance
 const MongoDBStore = connectMongo(session);
@@ -39,55 +33,54 @@ store.on("error", function (error) {
     console.log(error);
 });
 
-// Express session
+// Express session setup
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
-        resave: false, // this option specifies whether to save the session to the store on every request
-        saveUninitialized: false, // option specifies whether to save uninitialized sessions
+        resave: false,
+        saveUninitialized: false,
         store: store,
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-            httpOnly: true, // The cookie only accessible by the web server
+            httpOnly: true,
         },
     })
-)
+);
 
 // Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Set up the Apollo Server that will run alongside our Express app.
+// Create Apollo Server
 const server = new ApolloServer({
     typeDefs: mergedTypeDefs,
     resolvers: mergedResolvers,
-    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
 });
 
-// ensure that we wait until the server is ready
 await server.start();
 
-// Set up our Express middleware to handle CORS, body parsing,
-// and our expressMiddleware function.
+// Middleware for Apollo Server with express, integrating CORS and session handling
 app.use(
-    '/',
     cors({
-        origin: 'http://localhost:3000',
-        credentials: true
+        origin: '*',  
+        credentials: true,
     }),
     express.json(),
-    // expressMiddleware accepts the same arguments:
-    // an Apollo Server instance and optional configuration options
     expressMiddleware(server, {
-        context: async ({ req, res }) => buildContext({ req, res }),
+        context: async ({ req, res }) => {
+            const { event, context } = serverlessExpress.getCurrentInvoke();
+            return buildContext({
+                req,
+                res,
+                lambdaEvent: event,
+                lambdaContext: context,
+            });
+        },
     }),
 );
 
-await new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
-
-// database connection
+// Connect to MongoDB
 await connectDb();
 
-// const { url } = await startStandaloneServer(server);
-const url = `http://localhost:4000/`;
-console.log(`🚀 Server ready at ${url}`);
+// Export the handler for AWS Lambda
+export const handler = serverlessExpress({ app });
