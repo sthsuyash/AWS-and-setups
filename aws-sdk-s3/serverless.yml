@@ -1,0 +1,29 @@
+service: nasa-data-uploader
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  environment:
+    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME}
+    NASA_API_URL: ${env:NASA_API_URL}
+    NASA_API_KEY: ${env:NASA_API_KEY}
+
+package: 
+  exclude:
+    - node_modules/**
+    - .git/**
+    - test/**
+    - README.md
+    - .env
+
+functions:
+  uploadData:
+    handler: index.handler
+    events:
+      - schedule:
+          rate: rate(6 hours)
+          enabled: true
+
+plugins:
+  - serverless-offline
