@@ -1,0 +1,31 @@
+{
+  "name": "orm",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "serverless deploy",
+    "offline": "serverless offline"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "prisma": "^5.20.0",
+    "serverless-offline": "^14.3.2"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.11.0",
+    "@as-integrations/aws-lambda": "^3.1.0",
+    "@graphql-tools/merge": "^9.0.7",
+    "@graphql-tools/utils": "^10.5.4",
+    "@prisma/client": "5.20.0",
+    "@vendia/serverless-express": "^4.12.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "graphql": "^16.9.0",
+    "serverless": "^4.4.2"
+  }
+}
